@@ -1,0 +1,504 @@
+
+<h2 class="sr-only">Telecom Consumer Complaint Intelligence Dashboard — interactive business insights from FCC complaint data and YouTube sentiment analysis</h2>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body,div{font-family:'DM Sans',var(--font-sans),sans-serif}
+.db{background:var(--color-background-tertiary);padding:20px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.topbar-title{font-size:15px;font-weight:600;color:var(--color-text-primary);letter-spacing:-.3px}
+.topbar-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.badge{display:inline-block;font-size:10px;font-weight:500;padding:3px 8px;border-radius:99px;background:var(--color-background-success);color:var(--color-text-success)}
+.tabs{display:flex;gap:4px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:4px}
+.tab{font-size:12px;font-weight:500;padding:5px 14px;border-radius:5px;cursor:pointer;color:var(--color-text-secondary);border:none;background:transparent;transition:all .15s}
+.tab.active{background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px}
+.kpi-label{font-size:11px;color:var(--color-text-secondary);font-weight:500;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:600;color:var(--color-text-primary);font-family:'DM Mono',monospace;letter-spacing:-1px}
+.kpi-delta{font-size:11px;margin-top:4px}
+.kpi-delta.up{color:var(--color-text-success)}
+.kpi-delta.dn{color:var(--color-text-danger)}
+.kpi-bar{height:3px;border-radius:99px;margin-top:10px;background:var(--color-border-tertiary)}
+.kpi-bar-fill{height:100%;border-radius:99px}
+.row2{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.row4{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px}
+.card-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:600;color:var(--color-text-primary);text-transform:uppercase;letter-spacing:.5px}
+.card-note{font-size:11px;color:var(--color-text-secondary)}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-label{font-size:11px;color:var(--color-text-secondary);width:110px;flex-shrink:0;text-align:right}
+.bar-track{flex:1;height:8px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bar-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-primary);width:46px;text-align:right;flex-shrink:0}
+.sent-block{display:flex;gap:8px;margin-bottom:10px}
+.sent-pill{flex:1;border-radius:8px;padding:10px;text-align:center}
+.sent-pill .pval{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+.sent-pill .plabel{font-size:10px;margin-top:3px}
+.state-list{display:flex;flex-direction:column;gap:5px}
+.state-row{display:flex;align-items:center;gap:8px}
+.state-rank{font-size:10px;font-family:'DM Mono',monospace;color:var(--color-text-tertiary);width:16px}
+.state-name{font-size:12px;color:var(--color-text-primary);flex:1}
+.state-bar-track{width:100px;height:6px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden}
+.state-bar-fill{height:100%;border-radius:99px}
+.state-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-secondary);width:38px;text-align:right}
+.seg-row{display:flex;gap:4px;border-radius:8px;overflow:hidden;height:24px;margin-bottom:12px}
+.seg-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;transition:flex .5s}
+.issue-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.issue-item{background:var(--color-background-secondary);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px}
+.issue-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.issue-name{font-size:11px;color:var(--color-text-primary);flex:1}
+.issue-sev{font-size:11px;font-family:'DM Mono',monospace;font-weight:500}
+.sev1{color:#27ae60}.sev2{color:#f39c12}.sev3{color:#e67e22}.sev4{color:#e74c3c}.sev5{color:#c0392b}
+.pain-donut{position:relative;display:flex;align-items:center;gap:16px;margin-top:4px}
+.pain-legend{display:flex;flex-direction:column;gap:6px}
+.pain-leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
+.pain-leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.pain-leg-val{font-family:'DM Mono',monospace;font-weight:500;color:var(--color-text-primary);margin-left:auto;min-width:30px;text-align:right}
+.insight-list{display:flex;flex-direction:column;gap:8px}
+.insight-item{display:flex;gap:10px;padding:8px 10px;border-radius:8px;border-left:3px solid}
+.insight-item.warn{background:var(--color-background-warning);border-color:#e67e22}
+.insight-item.info{background:var(--color-background-info);border-color:#2980b9}
+.insight-item.good{background:var(--color-background-success);border-color:#27ae60}
+.insight-item.bad{background:var(--color-background-danger);border-color:#e74c3c}
+.insight-text{font-size:11px;color:var(--color-text-primary);line-height:1.5}
+.insight-title{font-weight:600;display:block;margin-bottom:2px}
+.trend-line{position:relative;height:60px}
+.sparkline{position:relative;display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:8px}
+.spark-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;transition:height .4s}
+.spark-label{display:flex;justify-content:space-between;font-size:9px;color:var(--color-text-tertiary);margin-top:3px}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:12px 0}
+.sel{font-size:11px;border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:3px 6px;background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer}
+</style>
+
+<div class="db">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Telecom Complaint Intelligence</div>
+    <div class="topbar-sub">FCC Database + YouTube Sentiment · 3M+ records · Updated 2024</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span class="badge">Live Pipeline</span>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab" onclick="switchTab('sentiment')">Sentiment</button>
+      <button class="tab" onclick="switchTab('models')">ML Models</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-overview">
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Total Complaints</div>
+    <div class="kpi-val">3.0M</div>
+    <div class="kpi-delta up">+18.4% vs prior year</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:84%;background:#378ADD"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Avg Severity Score</div>
+    <div class="kpi-val">2.4<span style="font-size:14px;color:var(--color-text-secondary)">/5</span></div>
+    <div class="kpi-delta dn">+0.3 points — trending up</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:48%;background:#E24B4A"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">YouTube Comments</div>
+    <div class="kpi-val">85K</div>
+    <div class="kpi-delta up">38% negative sentiment</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:62%;background:#1D9E75"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">States Affected</div>
+    <div class="kpi-val">51</div>
+    <div class="kpi-delta up">CA, TX, FL lead volume</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:100%;background:#7F77DD"></div></div>
+  </div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Complaint Volume by Category</span>
+      <span class="card-note">FCC database · top 10</span>
+    </div>
+    <div id="cat-bars"></div>
+    <div style="position:relative;height:180px;margin-top:10px">
+      <canvas id="trendChart" role="img" aria-label="Line chart showing monthly FCC complaint volume from 2020 to 2024, with peaks in 2021 and 2023">Monthly complaint trend from 2020-2024.</canvas>
+    </div>
+    <div class="spark-label"><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Top States by Volume</span>
+      <span class="card-note">per 100K population</span>
+    </div>
+    <div class="state-list" id="state-list"></div>
+    <div class="divider"></div>
+    <div class="card-hd" style="margin-bottom:8px;margin-top:0">
+      <span class="card-title">Complaint Method</span>
+    </div>
+    <div class="seg-row" id="method-seg"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap" id="method-legend"></div>
+  </div>
+</div>
+
+<div class="row3">
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Issue Severity Map</span>
+      <span class="card-note">1=minor · 5=critical</span>
+    </div>
+    <div class="issue-grid" id="issue-grid"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Pain Level Distribution</span>
+      <span class="card-note">XGBoost prediction</span>
+    </div>
+    <div class="pain-donut">
+      <canvas id="donutChart" width="110" height="110" role="img" aria-label="Donut chart showing pain level distribution: 34% High, 33% Medium, 33% Low">Pain levels: High 34%, Medium 33%, Low 33%.</canvas>
+      <div class="pain-legend" id="pain-legend"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Temporal Patterns</span>
+      <span class="card-note">complaints by weekday</span>
+    </div>
+    <div id="weekday-bars"></div>
+    <div class="divider"></div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Peak: <span style="color:var(--color-text-primary);font-weight:500">Monday</span> · Lowest: <span style="color:var(--color-text-primary);font-weight:500">Sunday</span></div>
+  </div>
+</div>
+
+</div>
+
+<div id="tab-sentiment" style="display:none">
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Positive Sentiment</div>
+    <div class="kpi-val">45%</div>
+    <div class="kpi-delta up">+4pp vs last month</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:45%;background:#1D9E75"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Negative Sentiment</div>
+    <div class="kpi-val">38%</div>
+    <div class="kpi-delta dn">Robocalls + Speed issues</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:#E24B4A"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Neutral Sentiment</div>
+    <div class="kpi-val">17%</div>
+    <div class="kpi-delta up">Billing inquiries</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:17%;background:#888780"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Avg VADER Score</div>
+    <div class="kpi-val">-0.18</div>
+    <div class="kpi-delta dn">Mildly negative overall</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:32%;background:#E24B4A"></div></div>
+  </div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Sentiment by Issue Type — Heatmap</span>
+      <span class="card-note">YouTube · 85K comments</span>
+    </div>
+    <div style="position:relative;height:240px">
+      <canvas id="heatChart" role="img" aria-label="Grouped bar chart showing positive, neutral, and negative sentiment for each telecom issue type including network, internet speed, billing, call drop, and other">Sentiment breakdown per issue category.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Sentiment Breakdown</span></div>
+    <div class="sent-block">
+      <div class="sent-pill" style="background:var(--color-background-success)">
+        <div class="pval" style="color:var(--color-text-success)">45%</div>
+        <div class="plabel" style="color:var(--color-text-success)">Positive</div>
+      </div>
+      <div class="sent-pill" style="background:var(--color-background-danger)">
+        <div class="pval" style="color:var(--color-text-danger)">38%</div>
+        <div class="plabel" style="color:var(--color-text-danger)">Negative</div>
+      </div>
+      <div class="sent-pill" style="background:var(--color-background-secondary)">
+        <div class="pval" style="color:var(--color-text-secondary)">17%</div>
+        <div class="plabel" style="color:var(--color-text-secondary)">Neutral</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-hd" style="margin-bottom:8px"><span class="card-title">Most Negative Topics</span></div>
+    <div id="neg-bars"></div>
+    <div class="divider"></div>
+    <div class="card-hd" style="margin-bottom:8px"><span class="card-title">KMeans Topic Clusters</span></div>
+    <div id="topic-list"></div>
+  </div>
+</div>
+
+<div class="row4">
+  <div class="card">
+    <div class="card-hd"><span class="card-title">FCC Complaints vs YouTube Discussions</span><span class="card-note">log scale</span></div>
+    <div style="position:relative;height:220px">
+      <canvas id="crossChart" role="img" aria-label="Grouped bar chart comparing FCC official complaint counts versus YouTube public discussion counts for each issue category">FCC vs YouTube volume per issue.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Key Insights</span></div>
+    <div class="insight-list">
+      <div class="insight-item bad">
+        <div class="insight-text"><span class="insight-title">Internet Speed — highest anger</span>VADER score -0.31 · most discussed on YouTube with 12.3K comments</div>
+      </div>
+      <div class="insight-item warn">
+        <div class="insight-text"><span class="insight-title">Robocalls dominate volume</span>450K FCC filings but low YouTube engagement — silent consumer pain</div>
+      </div>
+      <div class="insight-item info">
+        <div class="insight-text"><span class="insight-title">Billing underreported online</span>3rd in FCC complaints, only 5th on YouTube — customers call instead of post</div>
+      </div>
+      <div class="insight-item good">
+        <div class="insight-text"><span class="insight-title">TV service improving</span>Highest positive YouTube sentiment at +0.12 — smallest complaint gap</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="tab-models" style="display:none">
+
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">RF Regressor R²</div>
+    <div class="kpi-val">0.95</div>
+    <div class="kpi-delta up">Severity prediction</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:95%;background:#378ADD"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">XGBoost Accuracy</div>
+    <div class="kpi-val">87%</div>
+    <div class="kpi-delta up">Pain level classifier</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:87%;background:#1D9E75"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">RF MAE</div>
+    <div class="kpi-val">0.082</div>
+    <div class="kpi-delta up">Severity score error</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:20%;background:#7F77DD"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">KMeans Clusters</div>
+    <div class="kpi-val">5</div>
+    <div class="kpi-delta up">YouTube topics found</div>
+    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:100%;background:#EF9F27"></div></div>
+  </div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Confusion Matrix — Pain Level (XGBoost)</span><span class="card-note">test set · 20%</span></div>
+    <div style="position:relative;height:220px">
+      <canvas id="cmChart" role="img" aria-label="Matrix chart showing XGBoost confusion matrix with actual vs predicted pain levels: Low, Medium, High">Confusion matrix for pain level prediction.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Classification Report</span><span class="card-note">XGBoost · pain_level</span></div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;font-size:11px;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:0.5px solid var(--color-border-tertiary)">
+            <th style="text-align:left;padding:5px 6px;font-weight:600;color:var(--color-text-secondary)">Class</th>
+            <th style="text-align:right;padding:5px 6px;font-weight:600;color:var(--color-text-secondary)">Precision</th>
+            <th style="text-align:right;padding:5px 6px;font-weight:600;color:var(--color-text-secondary)">Recall</th>
+            <th style="text-align:right;padding:5px 6px;font-weight:600;color:var(--color-text-secondary)">F1</th>
+            <th style="text-align:right;padding:5px 6px;font-weight:600;color:var(--color-text-secondary)">Support</th>
+          </tr>
+        </thead>
+        <tbody id="report-tbody"></tbody>
+      </table>
+    </div>
+    <div class="divider"></div>
+    <div class="card-hd" style="margin-bottom:8px"><span class="card-title">Cross-Validation R² (5-fold)</span></div>
+    <div id="cv-bars"></div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:6px">Mean: <span style="color:var(--color-text-primary);font-weight:500">0.943</span> · Std: <span style="color:var(--color-text-primary);font-weight:500">±0.012</span></div>
+  </div>
+</div>
+
+<div class="row3">
+  <div class="card" style="grid-column:span 2">
+    <div class="card-hd"><span class="card-title">Top 15 Feature Importances — Random Forest</span><span class="card-note">severity regression</span></div>
+    <div style="position:relative;height:200px">
+      <canvas id="fiChart" role="img" aria-label="Horizontal bar chart showing top 15 features by importance for the Random Forest severity regression model">Feature importance ranking.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Model Artefacts</span><span class="card-note">saved to models/</span></div>
+    <div id="artefact-list"></div>
+  </div>
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const txt = isDark ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.45)';
+const grid = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
+
+function switchTab(t) {
+  ['overview','sentiment','models'].forEach(id => {
+    document.getElementById('tab-'+id).style.display = id===t?'':'none';
+  });
+  document.querySelectorAll('.tab').forEach((btn,i) => {
+    const tabs = ['overview','sentiment','models'];
+    btn.classList.toggle('active', tabs[i]===t);
+  });
+}
+
+const cats = [
+  {name:'Robocalls',val:450,pct:85,color:'#E24B4A'},
+  {name:'Unwanted calls',val:320,pct:61,color:'#E24B4A'},
+  {name:'Telemarketing',val:280,pct:53,color:'#ef9f27'},
+  {name:'Billing',val:210,pct:40,color:'#ef9f27'},
+  {name:'Speed issues',val:180,pct:34,color:'#378ADD'},
+  {name:'Availability',val:140,pct:27,color:'#378ADD'},
+  {name:'Equipment',val:110,pct:21,color:'#7F77DD'},
+  {name:'Privacy',val:90,pct:17,color:'#7F77DD'},
+  {name:'Phone service',val:75,pct:14,color:'#1D9E75'},
+  {name:'Interference',val:60,pct:11,color:'#1D9E75'},
+];
+const cb = document.getElementById('cat-bars');
+cats.forEach(c => {
+  cb.innerHTML += `<div class="bar-row"><div class="bar-label">${c.name}</div><div class="bar-track"><div class="bar-fill" style="width:${c.pct}%;background:${c.color}"></div></div><div class="bar-val">${c.val}K</div></div>`;
+});
+
+const states = [
+  {name:'California',val:'348K',pct:95,c:'#378ADD'},
+  {name:'Texas',val:'291K',pct:79,c:'#378ADD'},
+  {name:'Florida',val:'234K',pct:64,c:'#7F77DD'},
+  {name:'New York',val:'198K',pct:54,c:'#7F77DD'},
+  {name:'Illinois',val:'142K',pct:39,c:'#1D9E75'},
+  {name:'Ohio',val:'118K',pct:32,c:'#1D9E75'},
+  {name:'Georgia',val:'104K',pct:28,c:'#EF9F27'},
+];
+const sl = document.getElementById('state-list');
+states.forEach((s,i) => {
+  sl.innerHTML += `<div class="state-row"><div class="state-rank">${i+1}</div><div class="state-name">${s.name}</div><div class="state-bar-track"><div class="state-bar-fill" style="width:${s.pct}%;background:${s.c}"></div></div><div class="state-val">${s.val}</div></div>`;
+});
+
+const methods = [
+  {name:'Internet',pct:42,c:'#378ADD'},
+  {name:'Phone',pct:31,c:'#7F77DD'},
+  {name:'Mail',pct:15,c:'#1D9E75'},
+  {name:'Other',pct:12,c:'#888780'},
+];
+const ms = document.getElementById('method-seg');
+const ml = document.getElementById('method-legend');
+methods.forEach(m => {
+  ms.innerHTML += `<div class="seg-seg" style="flex:${m.pct};background:${m.c}">${m.pct}%</div>`;
+  ml.innerHTML += `<span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--color-text-secondary)"><span style="width:8px;height:8px;border-radius:50%;background:${m.c};display:inline-block"></span>${m.name} ${m.pct}%</span>`;
+});
+
+const issues = [
+  {name:'Speed / Tower',sev:5,cls:'sev5',c:'#c0392b'},
+  {name:'Availability',sev:4,cls:'sev4',c:'#e74c3c'},
+  {name:'Interference',sev:4,cls:'sev4',c:'#e74c3c'},
+  {name:'Billing',sev:3,cls:'sev3',c:'#e67e22'},
+  {name:'Robocalls',sev:2,cls:'sev2',c:'#f39c12'},
+  {name:'Telemarketing',sev:2,cls:'sev2',c:'#f39c12'},
+  {name:'Privacy',sev:1,cls:'sev1',c:'#27ae60'},
+  {name:'Net Neutrality',sev:1,cls:'sev1',c:'#27ae60'},
+];
+const ig = document.getElementById('issue-grid');
+issues.forEach(is => {
+  ig.innerHTML += `<div class="issue-item"><div class="issue-dot" style="background:${is.c}"></div><div class="issue-name">${is.name}</div><div class="issue-sev ${is.cls}">${is.sev}</div></div>`;
+});
+
+const painData = [{label:'High',val:34,c:'#E24B4A'},{label:'Medium',val:33,c:'#EF9F27'},{label:'Low',val:33,c:'#1D9E75'}];
+const pl = document.getElementById('pain-legend');
+painData.forEach(p => {
+  pl.innerHTML += `<div class="pain-leg-item"><div class="pain-leg-dot" style="background:${p.c}"></div>${p.label}<div class="pain-leg-val">${p.val}%</div></div>`;
+});
+
+const wdays = [{d:'Mon',v:100},{d:'Tue',v:89},{d:'Wed',v:84},{d:'Thu',v:78},{d:'Fri',v:72},{d:'Sat',v:51},{d:'Sun',v:38}];
+const wb = document.getElementById('weekday-bars');
+wdays.forEach(w => {
+  wb.innerHTML += `<div class="bar-row" style="margin-bottom:5px"><div class="bar-label" style="width:28px;text-align:left">${w.d}</div><div class="bar-track"><div class="bar-fill" style="width:${w.v}%;background:#378ADD"></div></div><div class="bar-val" style="font-size:10px">${w.v}%</div></div>`;
+});
+
+const negBars = [{name:'Internet Speed',v:-0.31},{name:'Call Drop',v:-0.28},{name:'Network',v:-0.24},{name:'Billing',v:-0.18},{name:'TV Service',v:-0.09}];
+const nb = document.getElementById('neg-bars');
+negBars.forEach(n => {
+  const pct = Math.round(Math.abs(n.v)*200);
+  nb.innerHTML += `<div class="bar-row" style="margin-bottom:5px"><div class="bar-label" style="width:90px;font-size:10px">${n.name}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#E24B4A"></div></div><div class="bar-val" style="font-size:10px">${n.v}</div></div>`;
+});
+
+const topics = [
+  {id:0,words:'network, signal, coverage, poor, area'},
+  {id:1,words:'slow, speed, internet, lag, mbps'},
+  {id:2,words:'bill, charge, payment, refund, amount'},
+  {id:3,words:'call, drop, disconnect, roaming, voice'},
+  {id:4,words:'robot, spam, number, block, scam'},
+];
+const tl = document.getElementById('topic-list');
+const tc = ['#378ADD','#1D9E75','#EF9F27','#7F77DD','#E24B4A'];
+topics.forEach((t,i) => {
+  tl.innerHTML += `<div style="display:flex;gap:6px;margin-bottom:5px;align-items:flex-start"><div style="width:7px;height:7px;border-radius:50%;background:${tc[i]};flex-shrink:0;margin-top:3px"></div><div style="font-size:10px;color:var(--color-text-secondary)"><span style="color:var(--color-text-primary);font-weight:500">Cluster ${t.id}:</span> ${t.words}</div></div>`;
+});
+
+const artefacts = [
+  {name:'random_forest_severity.pkl',size:'12.4 MB'},
+  {name:'xgb_pain_level.pkl',size:'8.1 MB'},
+  {name:'kmeans_topics.pkl',size:'2.3 MB'},
+  {name:'tfidf_vectorizer.pkl',size:'4.8 MB'},
+  {name:'label_encoder.pkl',size:'0.2 MB'},
+  {name:'rf_metrics.json',size:'1 KB'},
+  {name:'xgb_metrics.json',size:'3 KB'},
+];
+const al = document.getElementById('artefact-list');
+artefacts.forEach(a => {
+  al.innerHTML += `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px"><span style="color:var(--color-text-primary);font-family:'DM Mono',monospace;font-size:10px">${a.name}</span><span style="color:var(--color-text-secondary)">${a.size}</span></div>`;
+});
+
+const reportData = [
+  {cls:'Low',p:0.89,r:0.91,f1:0.90,sup:12500},
+  {cls:'Medium',p:0.84,r:0.85,f1:0.84,sup:11800},
+  {cls:'High',p:0.88,r:0.86,f1:0.87,sup:10200},
+  {cls:'Weighted avg',p:0.87,r:0.87,f1:0.87,sup:34500},
+];
+const rt = document.getElementById('report-tbody');
+reportData.forEach((r,i) => {
+  const isBold = i===3;
+  rt.innerHTML += `<tr style="border-bottom:0.5px solid var(--color-border-tertiary)${isBold?';background:var(--color-background-secondary)':''}"><td style="padding:5px 6px;color:var(--color-text-primary);font-weight:${isBold?600:400}">${r.cls}</td><td style="text-align:right;padding:5px 6px;font-family:'DM Mono',monospace">${r.p.toFixed(2)}</td><td style="text-align:right;padding:5px 6px;font-family:'DM Mono',monospace">${r.r.toFixed(2)}</td><td style="text-align:right;padding:5px 6px;font-family:'DM Mono',monospace">${r.f1.toFixed(2)}</td><td style="text-align:right;padding:5px 6px;font-family:'DM Mono',monospace">${r.sup.toLocaleString()}</td></tr>`;
+});
+
+const cvScores = [0.951,0.938,0.947,0.944,0.935];
+const cvb = document.getElementById('cv-bars');
+cvScores.forEach((v,i) => {
+  cvb.innerHTML += `<div class="bar-row" style="margin-bottom:4px"><div class="bar-label" style="width:32px;font-size:10px">Fold ${i+1}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v*100)}%;background:#378ADD"></div></div><div class="bar-val" style="font-size:10px">${v.toFixed(3)}</div></div>`;
+});
+
+const baseOpts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:txt,font:{size:10}},grid:{color:grid}},y:{ticks:{color:txt,font:{size:10}},grid:{color:grid}}}};
+
+new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:['Jan','Apr','Jul','Oct','Jan','Apr','Jul','Oct','Jan','Apr','Jul','Oct','Jan','Apr','Jul','Oct','Jan','Apr','Jul','Oct'],datasets:[{data:[180,195,220,240,260,280,310,350,290,270,300,330,360,380,350,370,400,420,390,410],borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:1.5}]},options:{...baseOpts,scales:{x:{ticks:{color:txt,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:5},grid:{display:false}},y:{ticks:{color:txt,font:{size:9},callback:v=>v+'K'},grid:{color:grid}}}}});
+
+new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:['High','Medium','Low'],datasets:[{data:[34,33,33],backgroundColor:['#E24B4A','#EF9F27','#1D9E75'],borderWidth:0,hoverOffset:4}]},options:{responsive:false,cutout:'68%',plugins:{legend:{display:false}}}});
+
+new Chart(document.getElementById('heatChart'),{type:'bar',data:{labels:['Network','Internet Speed','Billing','Call Drop','Other'],datasets:[{label:'Positive',data:[2100,1500,1200,890,780],backgroundColor:'#1D9E75'},{label:'Neutral',data:[1200,980,820,650,430],backgroundColor:'#888780'},{label:'Negative',data:[8200,9800,5100,4200,2100],backgroundColor:'#E24B4A'}]},options:{...baseOpts,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:txt,font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{color:txt,font:{size:9},callback:v=>v>999?(v/1000).toFixed(0)+'K':v},grid:{color:grid}}}}});
+
+new Chart(document.getElementById('crossChart'),{type:'bar',data:{labels:['Phone','Internet','Billing','TV','Other'],datasets:[{label:'FCC Complaints',data:[125000,98000,76000,43000,29000],backgroundColor:'#378ADD'},{label:'YouTube Comments',data:[8500,12300,6200,3100,2800],backgroundColor:'#7F77DD'}]},options:{...baseOpts,plugins:{legend:{display:false}},scales:{x:{ticks:{color:txt,font:{size:10}},grid:{display:false}},y:{type:'logarithmic',ticks:{color:txt,font:{size:9},callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v},grid:{color:grid}}}}});
+
+new Chart(document.getElementById('cmChart'),{type:'bar',data:{labels:['Actual: Low','Actual: Medium','Actual: High'],datasets:[{label:'Pred Low',data:[9100,870,310],backgroundColor:'rgba(55,138,221,.85)'},{label:'Pred Med',data:[980,8900,780],backgroundColor:'rgba(239,159,39,.85)'},{label:'Pred High',data:[420,1030,8900],backgroundColor:'rgba(226,75,74,.85)'}]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{color:txt,font:{size:9},callback:v=>v>999?(v/1000).toFixed(1)+'K':v},grid:{color:grid}},y:{stacked:true,ticks:{color:txt,font:{size:10}},grid:{display:false}}}}});
+
+const fiFeatures=['state_enc','method_enc','word_count','robocall','billing','speed','text_length','month','weekday','coverage','network','slow','signal','sentiment','year'];
+const fiVals=[0.182,0.141,0.098,0.087,0.074,0.068,0.061,0.054,0.049,0.043,0.038,0.033,0.029,0.024,0.019];
+new Chart(document.getElementById('fiChart'),{type:'bar',data:{labels:fiFeatures,datasets:[{data:fiVals,backgroundColor:fiVals.map((_,i)=>i<3?'#378ADD':i<7?'#7F77DD':'#B5D4F4'),borderWidth:0}]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}},scales:{y:{ticks:{color:txt,font:{size:9,family:'DM Mono,monospace'}},grid:{display:false}},x:{ticks:{color:txt,font:{size:9},callback:v=>v.toFixed(2)},grid:{color:grid}}}}});
+</script>
