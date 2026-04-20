@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Data (raw data is large and should not be committed)
+data/raw/
+data/processed/
+
+# Models (binary artefacts – use DVC or model registry instead)
+models/*.pkl
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Env
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
